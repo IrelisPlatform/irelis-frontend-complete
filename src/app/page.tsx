@@ -123,7 +123,8 @@ export default function Page() {
                         selectedJobId === job.id ? "scale-[1.02]" : "opacity-90"
                       }`}
                     >
-                      <JobCard job={job} />
+                      <JobCard job={job} onClick={() => handleOpenDetails(job.id)} />
+
                     </motion.div>
                   ))}
                 </motion.div>
