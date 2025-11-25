@@ -18,11 +18,15 @@ export default function SigninPage() {
   const returnTo = params.get("returnTo") || "/";
 
   const handleGoogle = () => {
-    window.location.href = `${backendUrl}/oauth2/authorization/google?returnTo=${encodeURIComponent(returnTo)}`;
+    window.location.href = 
+  `${backendUrl}/oauth2/authorization/google?state=google&returnTo=${encodeURIComponent(returnTo)}`;
+
   };
 
   const handleLinkedin = () => {
-    window.location.href = `${backendUrl}/oauth2/authorization/linkedin?returnTo=${encodeURIComponent(returnTo)}`;
+    window.location.href = 
+  `${backendUrl}/oauth2/authorization/linkedin?state=linkedin&returnTo=${encodeURIComponent(returnTo)}`;
+
   };
 
   const validateEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -52,10 +56,11 @@ export default function SigninPage() {
               Continuer avec Google
             </Button>
 
-            <Button variant="outline" className="w-full" onClick={handleLinkedin} disabled>
+            <Button variant="outline" className="w-full" onClick={handleLinkedin}>
               <Image src="/icons/linkedin-logo.jpg" alt="LinkedIn" width={18} height={18} className="mr-2" />
-              Continuer avec LinkedIn (bientôt)
+              Continuer avec LinkedIn
             </Button>
+
 
             <div className="text-center text-sm text-muted-foreground my-3">ou</div>
 

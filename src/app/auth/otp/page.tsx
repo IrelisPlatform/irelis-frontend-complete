@@ -41,19 +41,52 @@ export default function OtpPage() {
     return () => clearTimeout(timer);
   }, [resendDisabled, countdown]);
 
-  const handleVerify = () => {
-    if (!code) return;
-    // 🔁 Le backend gère la vérification
-    window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/otp/verify?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}&userType=${role}&returnTo=${encodeURIComponent(returnTo)}`;
-  };
+  const handleVerify = async () => {
+  if (!code) return;
 
-  const handleResend = () => {
-    // 🔁 Le backend gère le renvoi
-    window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/otp/resend?email=${encodeURIComponent(email)}&userType=${role}&returnTo=${encodeURIComponent(returnTo)}`;
-    toast.success("Demande de renvoi envoyée !");
+  try {
+    await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/otp/oauth2/exchange`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        code,
+        email,
+        userType: role,
+        provider: "otp"
+      }),
+    });
+
+    window.location.href = returnTo;
+  } catch (err) {
+    console.error(err);
+    setError("Code invalide ou expiré.");
+  }
+};
+
+
+  const handleResend = async () => {
+  try {
+    await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/otp/oauth2/exchange`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        email,
+        userType: role,
+        provider: "otp-resend"
+      }),
+    });
+
+    toast.success("Code renvoyé !");
     setResendDisabled(true);
     setCountdown(60);
-  };
+  } catch (err) {
+    console.error(err);
+    toast.error("Erreur lors du renvoi du code.");
+  }
+};
+
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

@@ -1,57 +1,36 @@
+// /app/auth/oauth2/callback/page.tsx
+
 "use client";
 
-import { useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
+import axios from "axios";
 
-export default function OAuth2Callback() {
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+export default function OAuthCallback() {
   const params = useSearchParams();
-  const router = useRouter();
+  const code = params.get("code");
+  const provider = params.get("state");
 
   useEffect(() => {
-    const code = params.get('code');
-    const returnTo = params.get("returnTo") || "/";
+    if (!code) return;
 
-    if (!code) {
-      console.error("Aucun code OAuth2 trouvé dans l’URL.");
-      router.push("/auth/signin");
-      return;
-    }
-
-    async function exchange() {
+    async function exchangeCode() {
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/auth/otp/oauth2/exchange`,
-          {
-            method: "POST",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ code }), // 👉 le backend attend le code dans le body
-          }
-        );
+        await axios.post(`${API_URL}/auth/otp/oauth2/exchange`, {
+          code,
+          provider: provider ?? "google",
+        }, { withCredentials: true });
 
-        if (!res.ok) {
-          console.error("Erreur backend OAuth2 exchange :", await res.text());
-          router.push("/auth/signin");
-          return;
-        }
-
-        const data = await res.json();
-
-        // 👉 Stockage des tokens
-        localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem("refreshToken", data.refreshToken);
-
-        // 👉 Redirection vers ton Dashboard ou Home
-        router.push("/");
+        window.location.href = "/";
       } catch (err) {
-        console.error("Erreur d’échange OAuth2 :", err);
+        console.error("Exchange failed:", err);
       }
     }
 
-    exchange();
-  }, [params, router]);
+    exchangeCode();
+  }, [code, provider]);
 
-  return <p className="p-4">Connexion en cours...</p>;
+  return <p>Connexion en cours...</p>;
 }
