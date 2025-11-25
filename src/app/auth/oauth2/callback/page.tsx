@@ -25,6 +25,7 @@ export default function OAuthCallback() {
       try {
         // Appelle le nouveau endpoint
         const data = await exchangeOAuthCode(code);
+        console.log("Token reçu:", data);
         saveAccessToken(data.accessToken);
         router.replace(returnTo);
       } catch (err) {

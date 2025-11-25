@@ -74,9 +74,20 @@ export function refreshAccessToken() {
 }
 
 
-// OAuth2 Exchange (Google, LinkedIn, etc.)
-export function exchangeOAuthCode(code: string) {
-  return apiRequest(`/auth/otp/oauth2/exchange?code=${encodeURIComponent(code)}`, {
+// ✅ OAuth2 Exchange (Google, LinkedIn, etc.)
+export async function exchangeOAuthCode(code: string) {
+  const BASE = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  const response = await fetch(`${BASE}/auth/otp/oauth2/exchange?code=${encodeURIComponent(code)}`, {
     method: "POST",
+    credentials: "include",
+
   });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Échange OAuth échoué (${response.status})`);
+  }
+
+  return response.json(); // { accessToken, refreshToken }
 }

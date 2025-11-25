@@ -2,6 +2,12 @@
 
 export function saveAccessToken(token: string) {
   // Sauvegarde dans localStorage (simple et fiable)
+
+  if (!token) {
+    console.warn("Tentative de sauvegarde d'un token vide");
+    return;
+  }
+
   localStorage.setItem("accessToken", token);
 
   // Optionnel : sauvegarde aussi en cookie pour compatibilité
