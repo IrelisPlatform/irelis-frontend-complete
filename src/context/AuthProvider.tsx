@@ -16,7 +16,6 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   userType: string | null;
-  signInWithGoogle: () => void;
   requestOtp: (email: string, userType?: string) => Promise<boolean>;
   verifyOtp: (email: string, code: string) => Promise<boolean>;
   setUserType: (type: string) => void;
@@ -32,7 +31,6 @@ const getBackendUrl = () => {
   if (!url) throw new Error("NEXT_PUBLIC_BACKEND_URL is not defined");
   return url;
 };
-
 
 /* -------------------- PROVIDER -------------------- */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -87,12 +85,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  /* ---------------- GOOGLE OAUTH -------------- */
-  const signInWithGoogle = () => {
-    const returnTo = params.get("returnTo") || "/";
-    window.location.href = `${backendUrl}/oauth2/authorization/google?returnTo=${encodeURIComponent(returnTo)}`;
-  };
-
   /* ---------------- OTP REQUEST -------------- */
   const requestOtp = async (email: string, userTypeArg = "CANDIDATE"): Promise<boolean> => {
     setUserType(userTypeArg); // ← sauvegarde le rôle choisi
@@ -107,7 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   /* ---------------- OTP VERIFY -------------- */
   const verifyOtp = async (email: string, code: string): Promise<boolean> => {
     const currentType = userType || "CANDIDATE";
-    const res = await fetch(`${backendUrl}/auth/otp/verify`, {
+    const res = await fetch(`${getBackendUrl}/auth/otp/verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -148,7 +140,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         loading,
         userType,
-        signInWithGoogle,
         requestOtp,
         verifyOtp,
         setUserType,

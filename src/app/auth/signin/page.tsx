@@ -19,7 +19,6 @@ export default function SigninPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const params = useSearchParams();
-  const { signInWithGoogle } = useAuth();
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   const returnTo = params.get("returnTo") || "/";
 
