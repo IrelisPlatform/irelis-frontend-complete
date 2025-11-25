@@ -4,14 +4,12 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { useAuth } from "@/context/AuthProvider";
 
 export default function OnboardingPage() {
   const params = useSearchParams();
   const email = params.get("email") || "";
   const returnTo = params.get("returnTo") || "/";
   const router = useRouter();
-  const { requestOtp } = useAuth();
   const [loading, setLoading] = useState(false);
 
   if (!email) {
@@ -20,22 +18,10 @@ export default function OnboardingPage() {
     return null;
   }
 
-  const handleChoose = async (userType: "CANDIDATE" | "RECRUITER") => {
+  const handleChoose = (userType: "CANDIDATE" | "RECRUITER") => {
     setLoading(true);
-    try {
-      // envoie la demande d'OTP (backend renvoie 204 si ok)
-      const ok = await requestOtp(email, userType);
-      if (ok) {
-        router.push(`/auth/otp/verify?email=${encodeURIComponent(email)}&returnTo=${encodeURIComponent(returnTo)}`);
-      } else {
-        // afficher erreur
-        console.error("Impossible d'envoyer l'OTP");
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    // 🔁 Le backend gère l’envoi de l’OTP
+    window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/otp/start?email=${encodeURIComponent(email)}&userType=${userType}&returnTo=${encodeURIComponent(returnTo)}`;
   };
 
   return (
