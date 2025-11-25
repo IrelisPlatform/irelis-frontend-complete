@@ -1,52 +1,46 @@
 "use client";
 
-import { useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-export default function OAuthSuccessPage() {
+export default function SuccessPage() {
   const params = useSearchParams();
   const router = useRouter();
 
+  const code = params.get("code");
+
   useEffect(() => {
-    const code = params.get("code");
+    if (!code) return;
 
-    if (!code) {
-      router.replace("/"); // si pas de code → home
-      return;
-    }
-
-    const exchange = async () => {
+    async function exchange() {
       try {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/otp/oauth2/exchange`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ code }),
             credentials: "include",
+            body: JSON.stringify({ code }),
           }
         );
 
         if (!res.ok) {
-          console.error("Erreur OAuth2 backend", await res.text());
-          router.replace("/"); 
+          console.error("Exchange failed");
           return;
         }
 
-        // tu peux stocker le token si le backend le renvoie
-        const data = await res.json();
-        console.log("OAuth tokens:", data);
-
-        // Redirige vers l’accueil ou le dashboard
-        router.replace("/");
+        router.push("/"); // dashboard
       } catch (err) {
-        console.error(err);
-        router.replace("/");
+        console.error("OAuth2 exchange error:", err);
       }
-    };
+    }
 
     exchange();
-  }, [params, router]);
+  }, [code, router]);
 
-  return <p>Connexion…</p>;
+  return (
+    <div className="flex items-center justify-center h-screen text-lg font-semibold">
+      Connexion en cours...
+    </div>
+  );
 }

@@ -1,7 +1,7 @@
 // src/app/auth/otp/page.tsx
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ export default function OtpPage() {
   const email = params.get("email") ?? "";
   const role = params.get("role") ?? "CANDIDATE";
   const returnTo = params.get("returnTo") ?? "/";
+  const router = useRouter();
 
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -43,39 +44,38 @@ export default function OtpPage() {
 
   const handleVerify = async () => {
   if (!code) return;
+  setLoading(true);
+  setError(null)
 
   try {
-    await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/otp/oauth2/exchange`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/otp/verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({
-        code,
-        email,
-        userType: role,
-        provider: "otp"
-      }),
+      body: JSON.stringify({ code, email, userType: role, provider: "otp" })
     });
 
-    window.location.href = returnTo;
-  } catch (err) {
-    console.error(err);
-    setError("Code invalide ou expiré.");
-  }
-};
+    if (!res.ok) {
+        setError("Code invalide ou expiré.");
+        return;
+      }
+
+      router.push(returnTo);
+    } catch (err: any) {
+      setError("Erreur réseau.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
   const handleResend = async () => {
   try {
-    await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/otp/oauth2/exchange`, {
+    const rest = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/otp/otp/resend`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({
-        email,
-        userType: role,
-        provider: "otp-resend"
-      }),
+      body: JSON.stringify({ email, userType: role, provider: "otp-resend" })
     });
 
     toast.success("Code renvoyé !");
