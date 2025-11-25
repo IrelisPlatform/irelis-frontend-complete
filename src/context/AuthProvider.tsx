@@ -20,6 +20,7 @@ interface AuthContextType {
   verifyOtp: (email: string, code: string) => Promise<boolean>;
   setUserType: (type: string) => void;
   logout: () => void;
+  fetchUser: () => Promise<void>;
 }
 
 /* -------------------- CONTEXT -------------------- */
@@ -144,6 +145,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         verifyOtp,
         setUserType,
         logout,
+        fetchUser
       }}
     >
       {children}
