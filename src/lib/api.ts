@@ -1,4 +1,7 @@
 // /lib/api.ts
+
+import { getAccessToken } from "@/lib/auth";
+
 const BASE = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
 function parseJSONOrText(res: Response) {
@@ -7,15 +10,9 @@ function parseJSONOrText(res: Response) {
   return res.text();
 }
 
-// client-side helper to read accessToken cookie (not HttpOnly)
-function getAccessTokenFromCookie() {
-  if (typeof document === "undefined") return null;
-  const match = document.cookie.match(new RegExp('(^| )accessToken=([^;]+)'));
-  return match ? decodeURIComponent(match[2]) : null;
-}
 
 async function apiRequest(path: string, options: RequestInit = {}) {
-  const accessToken = getAccessTokenFromCookie();
+  const accessToken = getAccessToken();
   const headers = {
     "Content-Type": "application/json",
     ...(options.headers || {}),
@@ -24,7 +21,7 @@ async function apiRequest(path: string, options: RequestInit = {}) {
   const res = await fetch(`${BASE}${path}`, {
     ...options,
     headers,
-    credentials: "include", // important to include cookies (refresh token sent by backend)
+    credentials: "include", 
   });
 
   if (res.status === 204) return true;
@@ -37,6 +34,8 @@ async function apiRequest(path: string, options: RequestInit = {}) {
   return parseJSONOrText(res);
 }
 
+
+// OTP
 export function requestOtp(email: string, userType: "CANDIDATE" | "RECRUITER") {
   return apiRequest("/auth/otp/request", {
     method: "POST",
@@ -58,6 +57,7 @@ export function resendOtp(email: string, userType: string) {
   });
 }
 
+// User
 export function checkEmail(email: string) {
   return apiRequest("/auth/otp/check-mail", {
     method: "POST",
@@ -69,8 +69,14 @@ export function getUser() {
   return apiRequest("/auth/otp/user", { method: "GET" });
 }
 
-// ask backend to refresh access token using HttpOnly refresh cookie
 export function refreshAccessToken() {
   return apiRequest("/auth/otp/refresh", { method: "POST" });
 }
 
+
+// OAuth2 Exchange (Google, LinkedIn, etc.)
+export function exchangeOAuthCode(code: string) {
+  return apiRequest(`/auth/otp/oauth2/exchange?code=${encodeURIComponent(code)}`, {
+    method: "POST",
+  });
+}

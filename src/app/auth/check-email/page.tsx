@@ -1,3 +1,4 @@
+//app/auth/check-email/page.tsx
 "use client";
 
 import { AuthHeader } from "@/components/auth/AuthHeader";
