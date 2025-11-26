@@ -27,14 +27,64 @@ export default function SigninPage() {
       setEmail("luqnleng5@gmail.com");
     }
   }, []);
+  
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === "OAUTH_SUCCESS") {
+        const { code } = event.data;
+        // Échange le code contre les tokens
+        exchangeOAuth2Code(code);
+      } else if (event.data?.type === "OAUTH_ERROR") {
+        setError("Échec de la connexion OAuth2.");
+      }
+    };
 
-  const handleGoogle = () => {
-    window.location.href = `${backendUrl}/oauth2/authorization/google?state=google&returnTo=${encodeURIComponent(returnTo)}`;
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
+  const exchangeOAuth2Code = async (tempCode: string) => {
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "https://irelis-backend.onrender.com";
+      const res = await fetch(`${backendUrl}/auth/otp/oauth2/exchange?code=${encodeURIComponent(tempCode)}`,
+        { method: "POST", headers: { "Content-Type": "application/json" } }
+      );
+      const data = await res.json();
+
+      if (res.ok && data.accessToken) {
+        localStorage.setItem("accessToken", data.accessToken);
+        localStorage.setItem("refreshToken", data.refreshToken);
+        const returnTo = localStorage.getItem("auth_returnTo") || "/";
+        window.location.href = returnTo;
+      } else {
+        setError("Échec de l’échange OAuth2.");
+      }
+    } catch (err) {
+      setError("Erreur réseau lors de l’échange OAuth2.");
+    }
   };
 
-  const handleLinkedin = () => {
-    window.location.href = `${backendUrl}/oauth2/authorization/linkedin?state=linkedin&returnTo=${encodeURIComponent(returnTo)}`;
+  const openOAuthPopup = (provider: "google" | "linkedin") => {
+     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "https://irelis-backend.onrender.com";
+    const returnTo = params.get("returnTo") || "/";
+    // URL de la popup vers le backend, qui redirigera vers Google/LinkedIn
+    const authUrl = `${backendUrl}/oauth2/authorization/${provider}?state=${provider}&returnTo=${encodeURIComponent(returnTo)}`;
+  
+    const width = 500;
+    const height = 600;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+  
+    window.open(
+      authUrl,
+      `${provider}_auth`,
+      `width=${width},height=${height},left=${left},top=${top},resizable,scrollbars`
+    );
   };
+
+  // Dans les boutons :
+  const handleGoogle = () => openOAuthPopup("google");
+  const handleLinkedin = () => openOAuthPopup("linkedin");
 
   const validateEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 

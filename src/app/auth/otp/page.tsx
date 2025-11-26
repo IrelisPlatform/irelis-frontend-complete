@@ -33,11 +33,9 @@ export default function OtpPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Compteur de renvoi (60s)
+  const [otpExpiry, setOtpExpiry] = useState(600);
   const [resendDisabled, setResendDisabled] = useState(true);
   const [resendCountdown, setResendCountdown] = useState(60);
-
-  // Durée de validité OTP (10 min = 600s)
-  const [otpExpiry, setOtpExpiry] = useState(600);
 
   // Timer pour l'expiration OTP
   useEffect(() => {
@@ -50,13 +48,13 @@ export default function OtpPage() {
 
   // Timer pour le renvoi
   useEffect(() => {
-    if (resendCountdown > 0) {
+    if (resendCountdown <= 0) {
+      setResendDisabled(false);
+    } else {
       const timer = setTimeout(() => {
         setResendCountdown((prev) => prev - 1);
       }, 1000);
       return () => clearTimeout(timer);
-    } else {
-      setResendDisabled(false);
     }
   }, [resendCountdown]);
 
@@ -124,8 +122,8 @@ export default function OtpPage() {
   };
 
   const handleResend = async () => {
-    if (resendDisabled) return;
     setLoading(true);
+    setError(null);
 
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "https://irelis-backend.onrender.com";
@@ -136,7 +134,8 @@ export default function OtpPage() {
       });
 
       if (res.ok) {
-        toast.success("Code renvoyé !");
+        toast.success("Nouveau code envoyé !");
+        setOtpExpiry(600);
         setResendDisabled(true);
         setResendCountdown(60);
       } else {
@@ -181,8 +180,8 @@ export default function OtpPage() {
 
           {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
 
-          <Button className="w-full mt-4" onClick={handleVerify} disabled={loading || !code}>
-            {loading ? "Connexion..." : "Vérifier et me connecter"}
+          <Button className="w-full mt-4" onClick={handleVerify} disabled={loading || !code || resendDisabled === false}>
+            {loading ? "Vérification..." : "Vérifier"}
           </Button>
 
           <div className="mt-4 text-center">
