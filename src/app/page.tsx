@@ -1,7 +1,8 @@
-// /app/page.tsx
+// /src/app/page.tsx
+
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "@/components/Header";
 import { JobSearchBar } from "@/components/jobs/SearchBar";
@@ -11,46 +12,42 @@ import JobDetails from "@/components/jobs/JobDetails";
 import { JobAlert } from "@/components/jobs/JobAlert";
 import { JobPagination } from "@/components/jobs/JobPagination";
 import { Footer } from "@/components/Footer";
-import { Card } from "@/components/ui/card";
 import mockJobs, { type Job } from "@/lib/mockJobs";
 import jobDetails from "@/lib/mockJobDetails";
-import { useAuth } from "@/context/AuthProvider";
+// ⚠️ useAuth non utilisé ici → supprimé
 
 export default function Page() {
+  const [selectedJobId, setSelectedJobId] = useState<string | undefined>(mockJobs[0]?.id);
 
-  const [selectedJobId, setSelectedJobId] = useState(mockJobs[0]?.id);
-
-  const selectedJob = jobDetails.find(j => j.id === selectedJobId) ?? null;
-
+  // ✅ Utilise useMemo pour éviter les recalculs inutiles
+  const selectedJob = useMemo(() => {
+    if (!selectedJobId) return null;
+    return jobDetails.find(j => j.id === selectedJobId) ?? null;
+  }, [selectedJobId]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const jobsPerPage = 5; // Nombre d'offres par page
-  
-
-  // Variables dérivées basées sur l'état ou les props
+  const jobsPerPage = 5;
   const totalPages = Math.ceil(mockJobs.length / jobsPerPage);
   const indexOfLastJob = currentPage * jobsPerPage;
   const indexOfFirstJob = indexOfLastJob - jobsPerPage;
   const currentJobs = mockJobs.slice(indexOfFirstJob, indexOfLastJob);
 
-  // Fonction de gestion du changement de page
   const handlePageChange = (page: number) => {
     setIsLoading(true);
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    // Simuler un léger délai de chargement pour l'animation
     setTimeout(() => setIsLoading(false), 300);
   };
 
   const handleOpenDetails = (id: string) => {
-    setSelectedJobId(id); // ID matches jobDetails entries
+    setSelectedJobId(id);
   };
 
   return (
     <div className="min-h-screen bg-[#f8f9fb]">
       <Header />
-      <JobSearchBar jobCount={mockJobs.length} /> {/* ✅ Mise à jour : jobs.length */}
+      <JobSearchBar jobCount={mockJobs.length} />
       <DropdownFilters />
 
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-10">
@@ -74,9 +71,8 @@ export default function Page() {
           </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-6"> {/* ✅ Structure mise à jour : colonne gauche + droite */}
-          
-          {/* LISTE DES JOBS — colonne gauche */}
+        <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-6">
+          {/* LISTE DES JOBS */}
           <div className="flex flex-col gap-4 lg:col-span-1">
             <AnimatePresence mode="wait">
               {isLoading ? (
@@ -124,7 +120,6 @@ export default function Page() {
                       }`}
                     >
                       <JobCard job={job} onClick={() => handleOpenDetails(job.id)} />
-
                     </motion.div>
                   ))}
                 </motion.div>
@@ -132,9 +127,8 @@ export default function Page() {
             </AnimatePresence>
           </div>
 
-          {/* DÉTAILS — colonne droite */}
-<div className="mt-8 lg:mt-0 lg:block lg:overflow-y-auto p-2 lg:col-span-1 border-l">
-
+          {/* DÉTAILS */}
+          <div className="mt-8 lg:mt-0 lg:block lg:overflow-y-auto p-2 lg:col-span-1 border-l">
             {selectedJob ? (
               <JobDetails job={selectedJob} />
             ) : (
@@ -142,12 +136,10 @@ export default function Page() {
                 Sélectionnez une offre pour afficher les détails.
               </div>
             )}
-
           </div>
         </div>
 
-        {/* Pagination — maintenant dans la colonne gauche */}
-        <div className="mt-auto pt-4">
+        <div className="mt-6">
           <JobPagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -155,7 +147,6 @@ export default function Page() {
           />
         </div>
 
-        {/* Job Alert Section — conservée en bas */}
         <motion.div
           className="mt-12"
           initial={{ opacity: 0, y: 30 }}

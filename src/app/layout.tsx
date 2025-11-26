@@ -5,7 +5,7 @@ import { Toaster } from "sonner";
 import "./globals.css";
 import { GeistSans } from "geist/font/sans";
 import { FloatingContact } from "@/components/FloatingContact";
-import { AuthProvider } from "@/context/AuthProvider";
+import { AuthProvider } from "@/context/AuthContext";
 
 export const metadata: Metadata = {
   title: "Irelis Jobs",
@@ -32,6 +32,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
-
-
 

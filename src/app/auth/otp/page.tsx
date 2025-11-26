@@ -1,8 +1,9 @@
 // src/app/auth/otp/page.tsx
+
 "use client";
 
-import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AuthHeader } from "@/components/auth/AuthHeader";
@@ -10,89 +11,155 @@ import { AuthFooter } from "@/components/auth/AuthFooter";
 import { toast } from "sonner";
 
 export default function OtpPage() {
-  const params = useSearchParams();
-  const email = params.get("email") ?? "";
-  const role = params.get("role") ?? "CANDIDATE";
-  const returnTo = params.get("returnTo") ?? "/";
   const router = useRouter();
+
+  // Récupère les données depuis localStorage (stockées dans signin/choose-role)
+  let email = "";
+  let returnTo = "/";
+  if (typeof window !== "undefined") {
+    email = localStorage.getItem("auth_email") || "";
+    returnTo = localStorage.getItem("auth_returnTo") || "/";
+  }
+
+  // Redirection sécurisée si email manquant
+  useEffect(() => {
+    if (!email) {
+      router.push("/auth/signin");
+    }
+  }, [email, router]);
 
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Compteur de renvoi
+  // Compteur de renvoi (60s)
   const [resendDisabled, setResendDisabled] = useState(true);
-  const [countdown, setCountdown] = useState(60);
+  const [resendCountdown, setResendCountdown] = useState(60);
 
-  // Timer 10 min
+  // Durée de validité OTP (10 min = 600s)
   const [otpExpiry, setOtpExpiry] = useState(600);
 
+  // Timer pour l'expiration OTP
   useEffect(() => {
-    const timer = setInterval(() => setOtpExpiry(prev => prev > 0 ? prev - 1 : 0), 1000);
+    if (otpExpiry <= 0) return;
+    const timer = setInterval(() => {
+      setOtpExpiry((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
     return () => clearInterval(timer);
   }, []);
 
+  // Timer pour le renvoi
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (resendDisabled && countdown > 0) {
-      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-    } else if (countdown === 0) {
+    if (resendCountdown > 0) {
+      const timer = setTimeout(() => {
+        setResendCountdown((prev) => prev - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else {
       setResendDisabled(false);
     }
-    return () => clearTimeout(timer);
-  }, [resendDisabled, countdown]);
+  }, [resendCountdown]);
+
+  // Demande initiale de l'OTP (au premier chargement)
+  useEffect(() => {
+    const requestOtp = async () => {
+      if (!email) return;
+      try {
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "https://irelis-backend.onrender.com";
+        const res = await fetch(${backendUrl}/auth/otp/request, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          toast.error(err.message || "Impossible d’envoyer le code.");
+          router.push("/auth/signin");
+        }
+        // Active le bouton "Renvoyer" après 60s
+        setResendDisabled(true);
+        setResendCountdown(60);
+      } catch (err) {
+        console.error(err);
+        toast.error("Erreur réseau lors de l’envoi du code.");
+        router.push("/auth/signin");
+      }
+    };
+
+    requestOtp();
+  }, [email, router]);
 
   const handleVerify = async () => {
-  if (!code) return;
-  setLoading(true);
-  setError(null)
+    if (!code) return;
+    setLoading(true);
+    setError(null);
 
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/otp/verify`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ code, email, userType: role, provider: "otp" })
-    });
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "https://irelis-backend.onrender.com";
+      const res = await fetch(${backendUrl}/auth/otp/verify, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code }),
+      });
 
-    if (!res.ok) {
-        setError("Code invalide ou expiré.");
-        return;
+      const data = await res.json();
+
+      if (res.ok && data.accessToken && data.refreshToken) {
+        // ✅ Stocke les tokens
+        if (typeof window !== "undefined") {
+          localStorage.setItem("accessToken", data.accessToken);
+          localStorage.setItem("refreshToken", data.refreshToken);
+        }
+        // ✅ Redirige vers la page demandée
+        window.location.href = returnTo;
+      } else {
+        setError(data.message || "Code invalide ou expiré.");
       }
-
-      router.push(returnTo);
     } catch (err: any) {
-      setError("Erreur réseau.");
+      console.error(err);
+      setError(err?.message || "Erreur réseau");
     } finally {
       setLoading(false);
     }
   };
 
-
   const handleResend = async () => {
-  try {
-    const rest = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/otp/otp/resend`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ email, userType: role, provider: "otp-resend" })
-    });
+    if (resendDisabled) return;
+    setLoading(true);
 
-    toast.success("Code renvoyé !");
-    setResendDisabled(true);
-    setCountdown(60);
-  } catch (err) {
-    console.error(err);
-    toast.error("Erreur lors du renvoi du code.");
-  }
-};
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "https://irelis-backend.onrender.com";
+      const res = await fetch(${backendUrl}/auth/otp/request, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
 
+      if (res.ok) {
+        toast.success("Code renvoyé !");
+        setResendDisabled(true);
+        setResendCountdown(60);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.message || "Impossible de renvoyer le code.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Erreur réseau lors du renvoi.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
+    return ${mins}:${secs.toString().padStart(2, "0")};
   };
+
+  if (!email) {
+    return <div>Chargement...</div>;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f9fafb]">
@@ -123,9 +190,9 @@ export default function OtpPage() {
               type="button"
               onClick={handleResend}
               disabled={resendDisabled}
-              className={`text-sm ${resendDisabled ? "text-gray-400" : "text-blue-600 hover:underline"}`}
+              className={text-sm ${resendDisabled ? "text-gray-400" : "text-blue-600 hover:underline"}}
             >
-              {resendDisabled ? `Renvoyer (${countdown}s)` : "Renvoyer le code"}
+              {resendDisabled ? Renvoyer (${resendCountdown}s) : "Renvoyer le code"}
             </button>
           </div>
         </div>

@@ -1,22 +1,45 @@
+// src/app/auth/choose-role/page.tsx
+
 "use client";
 
-import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { AuthHeader } from "@/components/auth/AuthHeader";
 import { AuthFooter } from "@/components/auth/AuthFooter";
 
 export default function ChooseRolePage() {
-  const email = useSearchParams().get("email") ?? "";
   const router = useRouter();
+  let email = "";
+
+  // Récupère l'email depuis localStorage (stocké dans signin)
+  if (typeof window !== "undefined") {
+    email = localStorage.getItem("auth_email") || "";
+  }
+
+  // Redirection de sécurité si email manquant
+  useEffect(() => {
+    if (!email) {
+      router.push("/auth/signin");
+    }
+  }, [email, router]);
 
   const choose = (role: string) => {
-    router.push(`/auth/otp?email=${encodeURIComponent(email)}&role=${role}`);
+    // Stocke temporairement le rôle (utile plus tard si besoin)
+    if (typeof window !== "undefined") {
+      localStorage.setItem("auth_role", role.toLowerCase());
+    }
+    // Passe uniquement à la page OTP (email déjà dans localStorage)
+    router.push("/auth/otp");
   };
+
+  if (!email) {
+    return <div>Chargement...</div>; // Évite le rendu incomplet pendant la redirection
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f9fafb]">
-
       <AuthHeader />
 
       <main className="flex flex-1 justify-center mt-4">
@@ -47,7 +70,6 @@ export default function ChooseRolePage() {
               Continuer en tant que recruteur
             </Button>
           </div>
-
         </div>
       </main>
 
