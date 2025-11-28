@@ -1,8 +1,13 @@
+// src/components/jobs/JobAlert.tsx
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Bell } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 export function JobAlert() {
+  const { t } = useLanguage();
+
   return (
     <div className="bg-gradient-to-r from-[#1e3a8a] via-[#1e40af] to-[#2563eb] rounded-2xl p-10 text-white shadow-2xl relative overflow-hidden">
       <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32"></div>
@@ -12,17 +17,17 @@ export function JobAlert() {
           <Bell className="w-8 h-8" />
         </div>
         <div className="flex-1">
-          <h3 className="text-white mb-3">Recevez les offres qui vous correspondent</h3>
+          <h3 className="text-white mb-3">{t.jobAlert.title}</h3>
           <p className="text-blue-100 mb-6 text-sm leading-relaxed">
-            Créez votre alerte emploi et soyez informé en temps réel des nouvelles opportunités correspondant à votre profil
+            {t.jobAlert.description}
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
             <Input
-              placeholder="Votre adresse email"
+              placeholder={t.jobAlert.emailPlaceholder}
               className="flex-1 bg-white border-0 text-gray-900 h-12 px-5 shadow-lg"
             />
             <Button className="bg-white text-[#1e3a8a] hover:bg-blue-50 h-12 px-8 shadow-lg hover:shadow-xl transition-all duration-200">
-              Créer mon alerte
+              {t.jobAlert.createAlert}
             </Button>
           </div>
         </div>

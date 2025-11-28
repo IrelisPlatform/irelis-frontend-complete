@@ -1,3 +1,5 @@
+// src/components/jobs/Filters.tsx
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -12,62 +14,24 @@ import {
 import { ChevronDown, X, Filter } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLanguage } from "@/context/LanguageContext";
 
 export function DropdownFilters() {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({});
 
   const filters = [
-    {
-      id: "ville",
-      label: "Ville/Région",
-      options: ["Yaoundé", "Douala", "Bafoussam", "Bamenda", "Garoua", "Kribi"],
-    },
-    {
-      id: "secteur",
-      label: "Secteur",
-      options: ["IT/Tech", "Banque/Finance", "Éducation", "Santé", "Agriculture", "Commerce"],
-    },
-    {
-      id: "contrat",
-      label: "Type de contrat",
-      options: ["CDI", "CDD", "Stage", "Freelance", "Temps partiel", "À distance"],
-    },
-    {
-      id: "etudes",
-      label: "Niveau d'études",
-      options: ["BAC", "BAC+2", "Licence/BAC+3", "Master/BAC+5", "Doctorat", "Sans diplôme"],
-    },
-    {
-      id: "experience",
-      label: "Expérience",
-      options: ["Débutant (0-1)", "Junior (1-3)", "Confirmé (3-5)", "Senior (5-10)", "Expert (10+)"],
-    },
-    {
-      id: "langues",
-      label: "Langues",
-      options: ["Français", "Anglais", "Bilingue Fr/En", "Autres langues"],
-    },
-    {
-      id: "employeur",
-      label: "Type d'employeur",
-      options: ["Entreprise privée", "ONG", "Organisation internationale", "Fonction publique", "Startup"],
-    },
-    {
-      id: "date",
-      label: "Date de publication",
-      options: ["Dernières 24h", "Derniers 7 jours", "Derniers 30 jours", "Tout"],
-    },
-    {
-      id: "salaire",
-      label: "Salaire (FCFA)",
-      options: ["< 100k", "100k - 300k", "300k - 500k", "500k - 1M", "> 1M"],
-    },
-    {
-      id: "taille",
-      label: "Taille entreprise",
-      options: ["1-10", "11-50", "51-200", "201-500", "500+"],
-    },
+    { id: "ville", label: t.filters.ville, options: ["Yaoundé", "Douala", "Bafoussam", "Bamenda", "Garoua", "Kribi"] },
+    { id: "secteur", label: t.filters.secteur, options: ["IT/Tech", "Banque/Finance", "Éducation", "Santé", "Agriculture", "Commerce"] },
+    { id: "contrat", label: t.filters.contrat, options: ["CDI", "CDD", "Stage", "Freelance", "Temps partiel", "À distance"] },
+    { id: "etudes", label: t.filters.etudes, options: ["BAC", "BAC+2", "Licence/BAC+3", "Master/BAC+5", "Doctorat", "Sans diplôme"] },
+    { id: "experience", label: t.filters.experience, options: ["Débutant (0-1)", "Junior (1-3)", "Confirmé (3-5)", "Senior (5-10)", "Expert (10+)"] },
+    { id: "langues", label: t.filters.langues, options: ["Français", "Anglais", "Bilingue Fr/En", "Autres langues"] },
+    { id: "employeur", label: t.filters.employeur, options: ["Entreprise privée", "ONG", "Organisation internationale", "Fonction publique", "Startup"] },
+    { id: "date", label: t.filters.date, options: ["Dernières 24h", "Derniers 7 jours", "Derniers 30 jours", "Tout"] },
+    { id: "salaire", label: t.filters.salaire, options: ["< 100k", "100k - 300k", "300k - 500k", "500k - 1M", "> 1M"] },
+    { id: "taille", label: t.filters.taille, options: ["1-10", "11-50", "51-200", "201-500", "500+"] },
   ];
 
   const toggleFilter = (filterId: string, option: string) => {
@@ -76,12 +40,10 @@ export function DropdownFilters() {
       const updated = current.includes(option)
         ? current.filter((item) => item !== option)
         : [...current, option];
-      
       if (updated.length === 0) {
         const { [filterId]: _, ...rest } = prev;
         return rest;
       }
-      
       return { ...prev, [filterId]: updated };
     });
   };
@@ -110,7 +72,7 @@ export function DropdownFilters() {
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-5">
         <div className="flex items-center gap-3 mb-3">
           <Filter className="w-4 h-4 text-[#1e3a8a]" />
-          <span className="text-sm text-gray-700">Filtres</span>
+          <span className="text-sm text-gray-700">{t.filters.title}</span>
           {totalActiveFilters > 0 && (
             <motion.span 
               className="bg-[#1e3a8a] text-white text-xs px-2 py-0.5 rounded-full"
@@ -181,7 +143,7 @@ export function DropdownFilters() {
                           }}
                           className="h-auto p-0 text-xs text-[#1e3a8a] hover:text-[#1e40af] hover:bg-transparent"
                         >
-                          Effacer
+                          {t.filters.clear}
                         </Button>
                       )}
                     </DropdownMenuLabel>
@@ -218,7 +180,7 @@ export function DropdownFilters() {
                   className="rounded-full text-gray-600 hover:text-red-600 hover:bg-red-50 transition-all duration-200 border border-transparent hover:border-red-200"
                 >
                   <X className="w-4 h-4 mr-1.5" />
-                  Effacer tout
+                  {t.filters.clearAll}
                 </Button>
               </motion.div>
             )}

@@ -11,30 +11,10 @@ import { useApplyJob } from "@/hooks/useApplyJob";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { JobDetail } from "@/lib/mockJobDetails";
 import { toast } from "sonner";
-
-interface JobDetailsProps {
-  job: {
-    id: string;
-    title: string;
-    company: string;
-    location: string;
-    type: string;
-    salary: string;
-    posted: string;
-    description: string;
-    tags: string[];
-    isNew?: boolean;
-    isUrgent?: boolean;
-    responsibilities: string[];
-    qualifications: string[];
-    benefits: string[];
-    about: string;
-    sector: string;
-    companySize: string;
-  };
-}
+import { useLanguage } from "@/context/LanguageContext"; // ← ajout
 
 export default function JobDetails({ job }: { job: JobDetail }) {
+  const { t } = useLanguage(); // ← ajout
   const { handleApply } = useApplyJob(job.id);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
@@ -47,9 +27,8 @@ export default function JobDetails({ job }: { job: JobDetail }) {
 
   return (
     <Card className="w-full max-w-full flex flex-col shadow-xl border-gray-100 overflow-hidden">
-      {/* Suppression de ScrollArea → cause du débordement */}
       <div className="w-full max-w-full overflow-x-hidden p-4 sm:p-6">
-        {/* En-tête avec logo et info entreprise */}
+        {/* En-tête */}
         <motion.div 
           className="mb-6"
           initial={{ opacity: 0, y: 20 }}
@@ -95,12 +74,12 @@ export default function JobDetails({ job }: { job: JobDetail }) {
           <div className="flex flex-wrap gap-1 sm:gap-2 mt-3">
             {job.isNew && (
               <Badge className="bg-blue-600 text-white text-xs sm:text-sm">
-                Nouveau
+                {t.jobDetails.new}
               </Badge>
             )}
             {job.isUrgent && (
               <Badge className="bg-red-600 text-white text-xs sm:text-sm">
-                Urgent
+                {t.jobDetails.urgent}
               </Badge>
             )}
             {job.tags.map((tag, index) => (
@@ -122,13 +101,15 @@ export default function JobDetails({ job }: { job: JobDetail }) {
               onClick={onApply}
               disabled={isApplying}
             >
-              {isApplying ? 'Envoi...' : 'Postuler'}
+              {isApplying ? t.jobDetails.sending : t.jobDetails.apply}
             </Button>
             <Button size="sm" variant="outline" className="border-[#1e3a8a]">
               <Bookmark className="w-4 h-4" />
+              <span className="ml-1 text-xs">{isBookmarked ? t.jobDetails.saved : t.jobDetails.save}</span>
             </Button>
             <Button size="sm" variant="outline" className="border-[#1e3a8a]">
               <Share2 className="w-4 h-4" />
+              <span className="ml-1 text-xs">{t.jobDetails.share}</span>
             </Button>
           </div>
         </motion.div>
@@ -139,7 +120,7 @@ export default function JobDetails({ job }: { job: JobDetail }) {
         <motion.div className="space-y-6 text-xs sm:text-sm">
           <div>
             <h3 className="mb-3 text-[#1e3a8a] flex items-center gap-2">
-              <Info className="w-4 h-4" /> Description
+              <Info className="w-4 h-4" /> {t.jobDetails.description}
             </h3>
             <p className="text-gray-600 leading-relaxed break-words">
               {job.description}
@@ -149,7 +130,7 @@ export default function JobDetails({ job }: { job: JobDetail }) {
           <Accordion type="single" collapsible className="w-full space-y-3">
             <AccordionItem value="responsibilities">
               <AccordionTrigger className="text-[#1e3a8a] text-sm sm:text-base">
-                Responsabilités
+                {t.jobDetails.responsibilities}
               </AccordionTrigger>
               <AccordionContent>
                 <ul className="list-disc ml-4 space-y-1 text-gray-600">
@@ -162,7 +143,7 @@ export default function JobDetails({ job }: { job: JobDetail }) {
 
             <AccordionItem value="qualifications">
               <AccordionTrigger className="text-[#1e3a8a] text-sm sm:text-base">
-                Qualifications
+                {t.jobDetails.qualifications}
               </AccordionTrigger>
               <AccordionContent>
                 <ul className="list-disc ml-4 space-y-1 text-gray-600">
@@ -175,7 +156,7 @@ export default function JobDetails({ job }: { job: JobDetail }) {
 
             <AccordionItem value="benefits">
               <AccordionTrigger className="text-[#1e3a8a] text-sm sm:text-base">
-                Avantages
+                {t.jobDetails.benefits}
               </AccordionTrigger>
               <AccordionContent>
                 <ul className="list-disc ml-4 space-y-1 text-gray-600">
@@ -191,12 +172,12 @@ export default function JobDetails({ job }: { job: JobDetail }) {
 
           <div className="bg-gradient-to-br from-gray-50 to-blue-50/30 p-3 sm:p-4 rounded-xl">
             <h3 className="mb-3 text-[#1e3a8a] flex items-center gap-2">
-              <Users className="w-4 h-4" /> À propos de {job.company}
+              <Users className="w-4 h-4" /> {t.jobDetails.about} {job.company}
             </h3>
             <p className="text-gray-600 mb-3 break-words">{job.about}</p>
             <div className="grid grid-cols-2 gap-2 text-gray-600 text-xs sm:text-sm">
-              <p><span className="font-medium">Secteur :</span> {job.sector}</p>
-              <p><span className="font-medium">Taille :</span> {job.companySize}</p>
+              <p><span className="font-medium">{t.jobDetails.sector}</span> {job.sector}</p>
+              <p><span className="font-medium">{t.jobDetails.companySize}</span> {job.companySize}</p>
             </div>
           </div>
         </motion.div>

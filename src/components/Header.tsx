@@ -2,13 +2,14 @@
 
 "use client";
 
-import { useAuth } from "@/context/AuthContext"; // ✅ Import corrigé
+import { useAuth } from "@/context/AuthContext";
 import { Bell, User, Menu } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import logo from "@/../public/icons/logo.png";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -22,13 +23,19 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { useLanguage } from "@/context/LanguageContext"; // ← ajout
 
 export function Header() {
   const router = useRouter();
   const { user, logout, loading } = useAuth();
-  const notifications = 0; // Tu activeras plus tard
+  const { t } = useLanguage(); // ← ajout
+  const notifications = 0;
 
-  // Évite le clignotement au chargement initial
+  const handleLogout = () => {
+    toast.success(t.header.toastLoggingOut);
+    setTimeout(() => logout(), 300);
+  };
+
   if (loading) {
     return (
       <header className="border-b border-gray-100 bg-white/95 backdrop-blur-md sticky top-0 z-50 h-20" />
@@ -52,15 +59,15 @@ export function Header() {
               className="flex items-center gap-2 cursor-pointer"
               onClick={() => router.push("/")}
             >
-              <img src={logo.src} alt="Irelis" className="h-10" />
+              <img src={logo.src} alt={t.header.logoAlt} className="h-10" />
             </motion.div>
 
             {/* NAVIGATION */}
             <nav className="hidden md:flex items-center gap-6">
               {[
-                { name: "Accueil", href: "/" },
-                { name: "Accompagnement", href: "/accompagnement" },
-                { name: "Blog", href: "/blog" },
+                { name: t.header.nav.home, href: "/" },
+                { name: t.header.nav.support, href: "/accompagnement" },
+                { name: t.header.nav.blog, href: "/blog" },
               ].map((item, i) => (
                 <motion.div
                   key={item.name}
@@ -82,17 +89,16 @@ export function Header() {
           {/* RIGHT AREA */}
           <div className="flex items-center gap-4">
 
-            {/* Notifications (masqué pour l'instant) */}
-            {/* user && notifications > 0 && (
+            {user && (
               <motion.div whileHover={{ scale: 1.08 }}>
                 <Button variant="ghost" size="icon" className="relative hover:bg-blue-50">
                   <Bell className="w-5 h-5 text-gray-600" />
-                  <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
-                    {notifications}
+                  <span className="absolute top-1 right-1 bg-gray-300 text-gray-700 text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                    0
                   </span>
                 </Button>
               </motion.div>
-            ) */}
+            )}
 
             {/* ➤ SI NON CONNECTÉ */}
             {!user && (
@@ -102,7 +108,7 @@ export function Header() {
                   className="border-[#1e3a8a] text-[#1e3a8a] hover:bg-[#1e3a8a] hover:text-white"
                   onClick={() => router.push("/auth/signin")}
                 >
-                  Connexion
+                  {t.header.login}
                 </Button>
               </motion.div>
             )}
@@ -120,18 +126,11 @@ export function Header() {
                   <DropdownMenuItem disabled className="text-gray-500">
                     {user.email}
                   </DropdownMenuItem>
-                  {/* 🔜 À décommenter quand les espaces existeront */}
-                  {/* <DropdownMenuItem onClick={() => router.push("/espace-candidat")}>
-                    Espace candidat
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push("/espace-recruteur")}>
-                    Espace recruteur
-                  </DropdownMenuItem> */}
                   <DropdownMenuItem
                     className="text-red-600"
-                    onClick={logout}
+                    onClick={handleLogout}
                   >
-                    Se déconnecter
+                    {t.header.logout}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -140,7 +139,7 @@ export function Header() {
             {/* CTA Recruteur */}
             <motion.div whileHover={{ scale: 1.05 }} className="hidden md:block">
               <Button className="bg-[#1e3a8a] hover:bg-[#1e40af] text-white shadow-md">
-                Recruteur/Publier une offre
+                {t.header.postJobCTA}
               </Button>
             </motion.div>
 
@@ -155,35 +154,28 @@ export function Header() {
               <SheetContent side="right" className="w-[75%] sm:w-[350px] p-6">
                 <SheetHeader>
                   <SheetTitle className="text-lg font-semibold text-[#1e3a8a]">
-                    Menu
+                    {t.header.mobileMenu.title}
                   </SheetTitle>
                 </SheetHeader>
 
                 <div className="mt-6 flex flex-col gap-6">
-                  <Link href="/" className="text-gray-800 text-lg">Accueil</Link>
-                  <Link href="/accompagnement" className="text-gray-800 text-lg">Accompagnement</Link>
-                  <Link href="/blog" className="text-gray-800 text-lg">Blog</Link>
+                  <Link href="/" className="text-gray-800 text-lg">{t.header.nav.home}</Link>
+                  <Link href="/accompagnement" className="text-gray-800 text-lg">{t.header.nav.support}</Link>
+                  <Link href="/blog" className="text-gray-800 text-lg">{t.header.nav.blog}</Link>
 
                   {!user && (
                     <Button
                       className="bg-[#1e3a8a] text-white mt-4"
                       onClick={() => router.push("/auth/signin")}
                     >
-                      Connexion
+                      {t.header.login}
                     </Button>
                   )}
 
                   {user && (
                     <>
-                      {/* 🔜 À décommenter plus tard */}
-                      {/* <Button variant="ghost" onClick={() => router.push("/espace-candidat")}>
-                        Espace candidat
-                      </Button>
-                      <Button variant="ghost" onClick={() => router.push("/espace-recruteur")}>
-                        Espace recruteur
-                      </Button> */}
-                      <Button variant="destructive" onClick={logout}>
-                        Se déconnecter
+                      <Button variant="destructive" onClick={handleLogout}>
+                        {t.header.logout}
                       </Button>
                     </>
                   )}

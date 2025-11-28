@@ -1,5 +1,8 @@
+// src/components/jobs/JobPagination.tsx
+
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface JobPaginationProps {
   currentPage: number;
@@ -8,40 +11,26 @@ interface JobPaginationProps {
 }
 
 export function JobPagination({ currentPage, totalPages, onPageChange }: JobPaginationProps) {
+  const { t } = useLanguage();
+
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
     const showEllipsisStart = currentPage > 3;
     const showEllipsisEnd = currentPage < totalPages - 2;
 
     if (totalPages <= 7) {
-      // Show all pages if total is 7 or less
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
       }
     } else {
-      // Always show first page
       pages.push(1);
-
-      if (showEllipsisStart) {
-        pages.push("...");
-      }
-
-      // Show current page and surrounding pages
+      if (showEllipsisStart) pages.push("...");
       const start = Math.max(2, currentPage - 1);
       const end = Math.min(totalPages - 1, currentPage + 1);
-
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
-
-      if (showEllipsisEnd) {
-        pages.push("...");
-      }
-
-      // Always show last page
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (showEllipsisEnd) pages.push("...");
       pages.push(totalPages);
     }
-
     return pages;
   };
 
@@ -55,7 +44,7 @@ export function JobPagination({ currentPage, totalPages, onPageChange }: JobPagi
         className="rounded-full"
       >
         <ChevronLeft className="w-4 h-4" />
-        Précédent
+        {t.pagination.previous}
       </Button>
 
       <div className="flex gap-1">
@@ -88,7 +77,7 @@ export function JobPagination({ currentPage, totalPages, onPageChange }: JobPagi
         disabled={currentPage === totalPages}
         className="rounded-full"
       >
-        Suivant
+        {t.pagination.next}
         <ChevronRight className="w-4 h-4" />
       </Button>
     </div>

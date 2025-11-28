@@ -9,11 +9,12 @@ import { Input } from "@/components/ui/input";
 import { AuthHeader } from "@/components/auth/AuthHeader";
 import { AuthFooter } from "@/components/auth/AuthFooter";
 import { toast } from "sonner";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function OtpPage() {
+  const { t } = useLanguage();
   const router = useRouter();
 
-  // Récupère les données depuis localStorage (stockées dans signin/choose-role)
   let email = "";
   let returnTo = "/";
   if (typeof window !== "undefined") {
@@ -21,7 +22,6 @@ export default function OtpPage() {
     returnTo = localStorage.getItem("auth_returnTo") || "/";
   }
 
-  // Redirection sécurisée si email manquant
   useEffect(() => {
     if (!email) {
       router.push("/auth/signin");
@@ -32,12 +32,10 @@ export default function OtpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Compteur de renvoi (60s)
   const [otpExpiry, setOtpExpiry] = useState(600);
   const [resendDisabled, setResendDisabled] = useState(true);
   const [resendCountdown, setResendCountdown] = useState(60);
 
-  // Timer pour l'expiration OTP
   useEffect(() => {
     if (otpExpiry <= 0) return;
     const timer = setInterval(() => {
@@ -46,7 +44,6 @@ export default function OtpPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Timer pour le renvoi
   useEffect(() => {
     if (resendCountdown <= 0) {
       setResendDisabled(false);
@@ -58,34 +55,33 @@ export default function OtpPage() {
     }
   }, [resendCountdown]);
 
-  // Demande initiale de l'OTP (au premier chargement)
   useEffect(() => {
     const requestOtp = async () => {
       if (!email) return;
       try {
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "https://irelis-backend.onrender.com";
+        const role = typeof window !== "undefined" ? localStorage.getItem("auth_role") : "CANDIDATE";
         const res = await fetch(`${backendUrl}/auth/otp/request`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ email, userType: role }),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          toast.error(err.message || "Impossible d’envoyer le code.");
+          toast.error(err.message || t.auth.signin.unknownError);
           router.push("/auth/signin");
         }
-        // Active le bouton "Renvoyer" après 60s
         setResendDisabled(true);
         setResendCountdown(60);
       } catch (err) {
         console.error(err);
-        toast.error("Erreur réseau lors de l’envoi du code.");
+        toast.error(t.auth.signin.serverError);
         router.push("/auth/signin");
       }
     };
 
     requestOtp();
-  }, [email, router]);
+  }, [email, router, t]);
 
   const handleVerify = async () => {
     if (!code) return;
@@ -103,19 +99,17 @@ export default function OtpPage() {
       const data = await res.json();
 
       if (res.ok && data.accessToken && data.refreshToken) {
-        // ✅ Stocke les tokens
         if (typeof window !== "undefined") {
           localStorage.setItem("accessToken", data.accessToken);
           localStorage.setItem("refreshToken", data.refreshToken);
         }
-        // ✅ Redirige vers la page demandée
         window.location.href = returnTo;
       } else {
-        setError(data.message || "Code invalide ou expiré.");
+        setError(data.message || t.auth.signin.unknownError);
       }
     } catch (err: any) {
       console.error(err);
-      setError(err?.message || "Erreur réseau");
+      setError(err?.message || t.auth.signin.serverError);
     } finally {
       setLoading(false);
     }
@@ -127,24 +121,25 @@ export default function OtpPage() {
 
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "https://irelis-backend.onrender.com";
+      const role = typeof window !== "undefined" ? localStorage.getItem("auth_role") : "CANDIDATE";
       const res = await fetch(`${backendUrl}/auth/otp/request`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, userType: role }),
       });
 
       if (res.ok) {
-        toast.success("Nouveau code envoyé !");
+        toast.success(t.auth.otp.resendSuccess);
         setOtpExpiry(600);
         setResendDisabled(true);
         setResendCountdown(60);
       } else {
         const err = await res.json().catch(() => ({}));
-        toast.error(err.message || "Impossible de renvoyer le code.");
+        toast.error(err.message || t.auth.signin.unknownError);
       }
     } catch (err) {
       console.error(err);
-      toast.error("Erreur réseau lors du renvoi.");
+      toast.error(t.auth.signin.serverError);
     } finally {
       setLoading(false);
     }
@@ -165,10 +160,15 @@ export default function OtpPage() {
       <AuthHeader />
       <main className="flex justify-center flex-1">
         <div className="bg-white p-8 rounded-xl shadow-sm w-full max-w-md border">
-          <h1 className="text-lg font-semibold mb-2">Saisissez le code</h1>
+          <h1 className="text-lg font-semibold mb-2">{t.auth.otp.title}</h1>
+          <p
+            className="text-sm text-muted-foreground mb-4"
+            dangerouslySetInnerHTML={{
+              __html: t.auth.otp.sentTo(email),
+            }}
+          />
           <p className="text-sm text-muted-foreground mb-4">
-            Un code a été envoyé à <strong>{email}</strong>.  
-            Valide pendant {formatTime(otpExpiry)}.
+            {t.auth.otp.validFor(formatTime(otpExpiry))}
           </p>
 
           <Input
@@ -180,8 +180,12 @@ export default function OtpPage() {
 
           {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
 
-          <Button className="w-full mt-4" onClick={handleVerify} disabled={loading || !code || resendDisabled === false}>
-            {loading ? "Vérification..." : "Vérifier"}
+          <Button
+            className="w-full mt-4"
+            onClick={handleVerify}
+            disabled={loading || !code}
+          >
+            {loading ? t.auth.otp.verifying : t.auth.otp.verify}
           </Button>
 
           <div className="mt-4 text-center">
@@ -191,7 +195,9 @@ export default function OtpPage() {
               disabled={resendDisabled}
               className={`text-sm ${resendDisabled ? "text-gray-400" : "text-blue-600 hover:underline"}`}
             >
-              {resendDisabled ? `Renvoyer (${resendCountdown}s)` : "Renvoyer le code"}
+              {resendDisabled
+                ? t.auth.otp.resend(resendCountdown)
+                : t.auth.otp.resendNow}
             </button>
           </div>
         </div>

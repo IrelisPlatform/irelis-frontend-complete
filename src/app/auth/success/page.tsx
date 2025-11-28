@@ -5,8 +5,10 @@
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { parseJwt } from "@/lib/jwt";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function AuthSuccessPage() {
+  const { t } = useLanguage();
   const params = useSearchParams();
   const router = useRouter();
   const code = params.get("code");
@@ -20,29 +22,28 @@ export default function AuthSuccessPage() {
     const exchange = async () => {
       try {
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "https://irelis-backend.onrender.com";
-        const res = await fetch(`${backendUrl}/auth/otp/oauth2/exchange?code=${encodeURIComponent(code)}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-          }
-        );
+        const res = await fetch(`${backendUrl}/auth/otp/oauth2/exchange?code=${encodeURIComponent(code)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
 
         const data = await res.json();
 
         if (res.ok && data.accessToken && data.refreshToken) {
-          // ✅ Stocke les tokens pour persistance
           if (typeof window !== "undefined") {
-
             const payload = parseJwt(data.accessToken);
-            const userEmail = payload?.email || "luqnleng5@gmail.com"; // fallback
+            const userEmail = payload?.email;
+            if (!userEmail) {
+              console.error("JWT ne contient pas d'email");
+              router.replace("/auth/signin?error=missing_email");
+              return;
+            }
             localStorage.setItem("auth_email", userEmail);
             localStorage.setItem("accessToken", data.accessToken);
             localStorage.setItem("refreshToken", data.refreshToken);
 
-            // Redirige vers la page initiale demandée (ex: /offres)
             const returnTo = localStorage.getItem("auth_returnTo") || "/";
             window.location.href = returnTo;
-            router.replace(returnTo);
           }
         } else {
           console.error("Échange OAuth2 échoué:", data);
@@ -59,7 +60,7 @@ export default function AuthSuccessPage() {
 
   return (
     <div className="flex items-center justify-center h-screen text-lg font-semibold">
-      Connexion en cours...
+      {t.auth.success.connecting}
     </div>
   );
 }

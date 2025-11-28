@@ -23,8 +23,20 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { useMediaQuery } from "react-responsive";
+import { X, MessageCircle, Send, RefreshCw } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { useLanguage } from "@/context/LanguageContext"; // ← Ajout du hook i18n
 
 export default function Page() {
+  const { t } = useLanguage(); // ← Accès aux traductions
+
   const [selectedJobId, setSelectedJobId] = useState<string | undefined>(mockJobs[0]?.id);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const isMobile = useMediaQuery({ maxWidth: 1023 });
@@ -42,6 +54,8 @@ export default function Page() {
   const indexOfFirstJob = indexOfLastJob - jobsPerPage;
   const currentJobs = mockJobs.slice(indexOfFirstJob, indexOfLastJob);
 
+  const [showGroups, setShowGroups] = useState(true);
+
   const handlePageChange = (page: number) => {
     setIsLoading(true);
     setCurrentPage(page);
@@ -56,11 +70,120 @@ export default function Page() {
     }
   };
 
+  const resetFilters = () => {
+    window.location.reload();
+  };
+
   return (
     <div className="min-h-screen bg-[#f8f9fb]">
       <Header />
       <JobSearchBar jobCount={mockJobs.length} />
       <DropdownFilters />
+
+      {/* ✅ BOUTON "Réinitialiser les filtres" */}
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 mt-4 flex justify-end">
+        <Button variant="ghost" size="sm" onClick={resetFilters}>
+          <RefreshCw className="w-4 h-4 mr-1" />
+          {t.page.resetFilters}
+        </Button>
+      </div>
+
+      {/* ✅ BLOC "Rejoignez nos groupes" - visible par défaut */}
+      {showGroups && (
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 mt-8">
+          <div className="bg-[#1e3a8a] text-white p-6 rounded-xl">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <h3 className="text-xl font-bold">{t.page.joinGroups.title}</h3>
+                <p className="text-sm mt-1">{t.page.joinGroups.subtitle}</p>
+              </div>
+              <div className="flex gap-3">
+                {/* WhatsApp */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="bg-green-400 hover:bg-green-500 text-white border-none"
+                    >
+                      <MessageCircle className="w-5 h-5 mr-2" />
+                      WhatsApp
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                      <a
+                        href="https://chat.whatsapp.com/DM7BvYe8pnbFfo9sohX1En?mode=wwt"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block"
+                      >
+                        {t.page.joinGroups.candidates}
+                      </a>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <a
+                        href="https://chat.whatsapp.com/FqcS0nhbgObGXVqs9O5oVg?mode=wwt"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block"
+                      >
+                        {t.page.joinGroups.recruiters}
+                      </a>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <a
+                        href="https://chat.whatsapp.com/KAJQnGcmcOaERfE72oldrm?mode=wwt"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block"
+                      >
+                        {t.page.joinGroups.support}
+                      </a>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Telegram */}
+                <Button
+                  variant="outline"
+                  className="flex-1 bg-blue-400 hover:bg-blue-500 text-white border-none"
+                  asChild
+                >
+                  <a
+                    href="https://t.me/irelisemplois"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Send className="w-5 h-5 mr-2" />
+                    Telegram
+                  </a>
+                </Button>
+              </div>
+              <button
+                onClick={() => setShowGroups(false)}
+                className="text-white hover:text-gray-200 ml-2"
+                aria-label={t.page.joinGroups.hide}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Bouton "Afficher les groupes" si masqué */}
+      {!showGroups && (
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 mt-8">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowGroups(true)}
+            className="bg-[#1e3a8a] text-white hover:bg-[#1e40af]"
+          >
+            {t.page.showGroups}
+          </Button>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-10">
         <motion.div
@@ -70,15 +193,15 @@ export default function Page() {
           transition={{ duration: 0.4 }}
         >
           <div>
-            <h2 className="text-[#1e3a8a] mb-1">Offres d'emploi</h2>
-            <p className="text-gray-600 text-sm">Découvrez les meilleures opportunités pour vous</p>
+            <h2 className="text-[#1e3a8a] mb-1">{t.page.jobList.title}</h2>
+            <p className="text-gray-600 text-sm">{t.page.jobList.subtitle}</p>
           </div>
           <div className="flex gap-2 text-sm">
             <select className="px-5 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-700 hover:border-[#1e3a8a] focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a]/20 transition-all shadow-sm hover:shadow-md">
-              <option>Plus pertinents</option>
-              <option>Plus récents</option>
-              <option>Salaire: Élevé à Faible</option>
-              <option>Salaire: Faible à Élevé</option>
+              <option>{t.page.sort.relevance}</option>
+              <option>{t.page.sort.recent}</option>
+              <option>{t.page.sort.salaryHighToLow}</option>
+              <option>{t.page.sort.salaryLowToHigh}</option>
             </select>
           </div>
         </motion.div>
@@ -145,7 +268,7 @@ export default function Page() {
               <JobDetails job={selectedJob} />
             ) : (
               <div className="p-6 text-muted-foreground">
-                Sélectionnez une offre pour afficher les détails.
+                {t.page.selectJobToViewDetails}
               </div>
             )}
           </div>
@@ -179,7 +302,7 @@ export default function Page() {
         >
           <SheetHeader>
             <SheetTitle className="text-xl font-semibold truncate">
-              {selectedJob?.title || "Détails de l'offre"}
+              {selectedJob?.title || t.page.jobDetails.defaultTitle}
             </SheetTitle>
           </SheetHeader>
 
@@ -194,11 +317,13 @@ export default function Page() {
             }}
           >
             <div className="w-full overflow-hidden">
-              {selectedJob ? <JobDetails job={selectedJob} /> : <p>Sélectionnez une offre pour voir les détails.</p>}
+              {selectedJob ? <JobDetails job={selectedJob} /> : <p>{t.page.selectJobToViewDetails}</p>}
             </div>
           </div>
 
-          <SheetClose className="mt-6 w-full">Fermer</SheetClose>
+          <SheetClose className="mt-6 w-full">
+            {t.common.close}
+          </SheetClose>
         </SheetContent>
       </Sheet>
 

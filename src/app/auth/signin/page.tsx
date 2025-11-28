@@ -9,8 +9,10 @@ import { Input } from "@/components/ui/input";
 import { AuthHeader } from "@/components/auth/AuthHeader";
 import { AuthFooter } from "@/components/auth/AuthFooter";
 import Image from "next/image";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function SigninPage() {
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
@@ -21,7 +23,6 @@ export default function SigninPage() {
       ? "/"
       : params.get("returnTo") || "/";
 
-  // 🔧 En développement, pré-remplir l'email pour les tests OTP
   useEffect(() => {
     if ((process.env.NODE_ENV || 'production') === 'development') {
       setEmail("luqnleng5@gmail.com");
@@ -42,12 +43,12 @@ export default function SigninPage() {
 
   const handleContinue = async () => {
     if (!validateEmail(email)) {
-      setError("Veuillez entrer une adresse email valide.");
+      setError(t.auth.signin.invalidEmail);
       return;
     }
 
-    setIsChecking(true); // ✅ Démarrer le chargement
-    setError("") 
+    setIsChecking(true);
+    setError("");
 
     try {
       const res = await fetch(`${backendUrl}/auth/otp/check-mail`, {
@@ -68,11 +69,11 @@ export default function SigninPage() {
           router.push("/auth/otp");
         }
       } else {
-        setError(data.message || "Une erreur est survenue. Veuillez réessayer.");
+        setError(data.message || t.auth.signin.unknownError);
       }
     } catch (err) {
       console.error(err);
-      setError("Impossible de contacter le serveur.");
+      setError(t.auth.signin.serverError);
     } finally {
       setIsChecking(false);
     }
@@ -83,35 +84,40 @@ export default function SigninPage() {
       <AuthHeader />
       <main className="flex justify-center flex-1">
         <div className="bg-white p-8 rounded-xl shadow-sm w-full max-w-md border">
-          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-            Créez un compte ou connectez-vous...
+          <span className="text-2xl font-bold text-[#1e3a8a]">{t.auth.signin.title}</span>
+
+          <h2 className="mt-6 w-full text-muted-foreground">
+            {t.auth.signin.subtitle}
+          </h2>
+
+          <p className="mt-6 text-xs text-muted-foreground mb-6 leading-relaxed">
+            {t.auth.signin.consent}
           </p>
 
-          {/* 🔧 Dev helper */}
           {process.env.NODE_ENV === "development" && (
             <p className="text-xs text-orange-500 mb-3 bg-orange-50 p-2 rounded">
-              💡 En développement : utilisez luqnleng5@gmail.com (ou un alias) pour recevoir l’OTP.
+              {t.auth.signin.devNote}
             </p>
           )}
 
           <div className="space-y-3">
             <Button variant="outline" className="w-full" onClick={handleGoogle}>
               <Image src="/icons/google-logo.jpg" alt="Google" width={18} height={18} className="mr-2" />
-              Continuer avec Google
+              {t.auth.signin.google}
             </Button>
 
             <Button variant="outline" className="w-full" onClick={handleLinkedin}>
               <Image src="/icons/linkedin-logo.jpg" alt="LinkedIn" width={18} height={18} className="mr-2" />
-              Continuer avec LinkedIn
+              {t.auth.signin.linkedin}
             </Button>
 
-            <div className="text-center text-sm text-muted-foreground my-3">ou</div>
+            <div className="text-center text-sm text-muted-foreground my-3">{t.auth.signin.or}</div>
 
             <div>
-              <label className="text-sm mb-1 block">Adresse email</label>
+              <label className="text-sm mb-1 block">{t.auth.signin.emailLabel}</label>
               <Input
                 type="email"
-                placeholder="vous@exemple.com"
+                placeholder={t.auth.signin.emailPlaceholder}
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
@@ -126,7 +132,7 @@ export default function SigninPage() {
               onClick={handleContinue} 
               disabled={!email || isChecking}
             >
-              {isChecking ? "Vérification..." : "Continuer"}
+              {isChecking ? t.auth.signin.verifying : t.auth.signin.continue}
             </Button>
           </div>
         </div>
