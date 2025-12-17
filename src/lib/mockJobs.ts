@@ -1,3 +1,5 @@
+// src/lib/mockJobs.ts
+
 // Définir un type pour une offre d'emploi (facultatif mais recommandé)
 export type Job = {
   id: string;

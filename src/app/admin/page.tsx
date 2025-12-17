@@ -5,17 +5,36 @@
 import { AdminJobsTable } from "@/components/admin/AdminJobsTable";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAdminJobs } from "@/hooks/admin/useAdminJobs";
 
 export default function AdminDashboardPage() {
-  // Optionnel : redirection si pas de token (double sécurité)
+  const { getAuthToken } = useAdminJobs();
+  const router = useRouter();
+
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const adminToken = localStorage.getItem("adminToken");
-      if (!adminToken) {
-        window.location.href = "/admin/login";
+    const validateSession = async () => {
+      const token = getAuthToken(); // cette fonction doit retourner le token OU null
+      if (!token) {
+        router.push("/admin/login");
+        return;
       }
-    }
-  }, []);
+
+      // Optionnel : faire un petit appel pour vérifier si le token est valide
+      try {
+        const res = await fetch("/admin/jobs?page=0&size=1", { // endpoint admin léger
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.status === 401) {
+          localStorage.removeItem("accessToken");
+          router.push("/admin/login");
+        }
+      } catch (err) {
+        // ignore (offline, etc.)
+      }
+    };
+    
+    validateSession();
+  }, [router]);
 
   return (
     <div className="space-y-6">

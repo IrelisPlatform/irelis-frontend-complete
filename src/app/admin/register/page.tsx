@@ -9,6 +9,7 @@ import { AuthHeader } from "@/components/auth/AuthHeader";
 import { AuthFooter } from "@/components/auth/AuthFooter";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
+import { useAdminRegister } from "@/hooks/useAdminRegister";
 
 export default function AdminRegisterPage() {
   const [email, setEmail] = useState("");
@@ -16,8 +17,9 @@ export default function AdminRegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  const { register, loading: registerLoading } = useAdminRegister();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,34 +34,7 @@ export default function AdminRegisterPage() {
       return;
     }
 
-    setLoading(true);
-
-    try {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL?.trim() || 'http://api-irelis.us-east-2.elasticbeanstalk.com';
-      const res = await fetch(`${backendUrl}/admin/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (res.ok) {
-        toast.success("Compte créé avec succès. Veuillez vous connecter.");
-        router.push("/admin");
-      } else {
-        let errorData = {};
-        try {
-          errorData = await res.json();
-        } catch (e) {
-          // ignore parsing error
-        }
-        const message = errorData?.message || "Échec de l'inscription";
-        toast.error(message);
-      } 
-    } catch (err) {
-      toast.error("Erreur réseau");
-    } finally {
-      setLoading(false);
-    }
+    await register(email, password); // ← hook centralisé
   };
 
   return (
@@ -129,9 +104,9 @@ export default function AdminRegisterPage() {
             <Button
               type="submit"
               className="w-full bg-[#1e3a8a] hover:bg-[#1e40af] text-white"
-              disabled={loading}
+              disabled={registerLoading}
             >
-              {loading ? "Création en cours..." : "Créer le compte"}
+              {registerLoading ? "Création en cours..." : "Créer le compte"}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">

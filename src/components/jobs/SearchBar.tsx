@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/context/LanguageContext";
+import { useState, useEffect } from 'react';
 
 interface JobSearchBarProps {
   jobCount: number;

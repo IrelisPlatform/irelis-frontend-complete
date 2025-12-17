@@ -1,4 +1,5 @@
 // src/lib/mockJobDetails.ts
+
 export type JobDetail = {
   id: string;
   title: string;
@@ -17,6 +18,12 @@ export type JobDetail = {
   about: string;
   companySize: string;
   sector: string;
+  companySize: string;
+  expirationDate?: string;   
+  publishedAt?: string;     
+  isNew: boolean;
+  isUrgent: boolean;
+  tags: string[];
 };
 
 const jobDetails: JobDetail[] = [

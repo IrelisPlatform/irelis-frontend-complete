@@ -4,22 +4,43 @@ import { Card, CardContent} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { MapPin, Banknote, Info, Briefcase, DollarSign, Clock, Users, Building2, Bookmark, Share2, Send, ExternalLink, Loader2 } from "lucide-react";
+import { MapPin, Banknote, Info, Briefcase, DollarSign, Clock, Calendar, Users, Building2, Bookmark, Share2, Send, ExternalLink, Loader2, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { useApplyJob } from "@/hooks/useApplyJob";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
-import { JobDetail } from "@/lib/mockJobDetails";
+import { PublishedJob } from "@/types/job";
 import { toast } from "sonner";
 import { useLanguage } from "@/context/LanguageContext";
-import { MatchingScore } from "@/components/candidate/MatchingScore";
-import { useMatchingScore } from "@/hooks/candidate/useMatchingScore";
-import { useCandidateProfile } from "@/hooks/candidate/useCandidateProfile";
+import { formatRelativePublishDate, formatRelativeExpirationDate } from "@/utils/date";
 
-export default function JobDetails({ job }: { job: JobDetail }) {
-  const { t } = useLanguage(); // ← ajout
-  const { apply, isApplying: isApplyingHook } = useApplyJob(job.id);
+export default function JobDetails({ job }: { job: PublishedJob }) {
+  const { t } = useLanguage();
   const [isBookmarked, setIsBookmarked] = useState(false);
+
+  const handleApply = () => {
+    alert("Fonctionnalité de candidature bientôt disponible !");
+  };
+
+  const handleBookmark = () => {
+    setIsBookmarked(!isBookmarked);
+    // Pour l'instant : pas de persistance
+  };
+
+  const handleShare = () => {
+    // Optionnel : partager l'URL actuelle
+    if (navigator.share) {
+      navigator.share({
+        title: job.title,
+        text: `Découvrez cette offre chez ${job.company}`,
+        url: window.location.href,
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      alert("Lien copié dans le presse-papiers !");
+    }
+  };
+
+  const displayCompany = job.company || "l'entreprise";
 
   return (
     <Card className="w-full max-w-full flex flex-col shadow-xl border-gray-100 overflow-hidden">
@@ -36,19 +57,16 @@ export default function JobDetails({ job }: { job: JobDetail }) {
             whileHover={{ scale: 1.05, rotate: 2 }}
             transition={{ type: "spring", stiffness: 300 }}
           >
-            <span className="text-lg sm:text-2xl select-none">{job.company.substring(0, 2).toUpperCase()}</span>
+            <span className="text-lg sm:text-2xl select-none">
+              {displayCompany.substring(0, 2).toUpperCase()}
+            </span>
           </motion.div>
           
-          <h2 className="text-xl sm:text-2xl mb-2 text-[#1e3a8a] break-words">{job.title}</h2>
-          <p className="text-gray-600 mb-4 break-words">{job.company}</p>
+          <h2 className="text-xl sm:text-2xl mb-2 text-[#1e3a8a] break-words">
+            {job.title}
+          </h2>
+          <p className="text-gray-600 mb-4 break-words">{displayCompany}</p>
 
-          {/* Score de compatibilité */}
-          {job.id && (
-            <div className="mb-6">
-              <h3 className="text-lg font-medium text-foreground mb-3">Votre compatibilité</h3>
-              <MatchingScoreContainer offerId={job.id} />
-            </div>
-          )}
           
           {/* Informations clés */}
           <div className="bg-gradient-to-br from-blue-50/80 to-indigo-50/50 p-3 sm:p-5 rounded-xl border border-blue-100/50 shadow-sm">
@@ -57,7 +75,18 @@ export default function JobDetails({ job }: { job: JobDetail }) {
                 { icon: MapPin, text: job.location },
                 { icon: Briefcase, text: job.type },
                 { icon: DollarSign, text: job.salary },
-                { icon: Clock, text: job.posted }
+                { 
+                  icon: Clock, 
+                  text: job.expirationDate 
+                    ? formatRelativeExpirationDate(job.expirationDate) 
+                    : "Date d’expiration non précisée" 
+                },
+                { 
+                  icon: Calendar, 
+                  text: job.publishedAt 
+                    ? `Publiée il y a ${formatRelativePublishDate(job.publishedAt)}`
+                    : "Publiée récemment" 
+                }
               ].map((item, i) => (
                 <motion.span 
                   key={i}
@@ -100,18 +129,28 @@ export default function JobDetails({ job }: { job: JobDetail }) {
           {/* Boutons */}
           <div className="flex gap-2 mt-4">
             <Button 
-              size="sm" 
-              className="flex-1 bg-[#1e3a8a] hover:bg-[#1e40af] text-white shadow"
-              onClick={apply}
-              disabled={isApplyingHook}
+              onClick={handleApply} 
+              className="flex-1 bg-[#1e3a8a] hover:bg-[#1e40af] text-white font-medium py-3 rounded-lg shadow-md transition-all duration-200"
             >
-              {isApplyingHook ? t.jobDetails.sending : t.jobDetails.apply}
+              Postuler
             </Button>
-            <Button size="sm" variant="outline" className="border-[#1e3a8a]">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="border-[#1e3a8a]"
+              onClick={handleBookmark}
+            >
               <Bookmark className="w-4 h-4" />
-              <span className="ml-1 text-xs">{isBookmarked ? t.jobDetails.saved : t.jobDetails.save}</span>
+              <span className="ml-1 text-xs">
+                {isBookmarked ? t.jobDetails.saved : t.jobDetails.save}
+              </span>
             </Button>
-            <Button size="sm" variant="outline" className="border-[#1e3a8a]">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="border-[#1e3a8a]"
+              onClick={handleShare}
+            >
               <Share2 className="w-4 h-4" />
               <span className="ml-1 text-xs">{t.jobDetails.share}</span>
             </Button>
@@ -127,7 +166,7 @@ export default function JobDetails({ job }: { job: JobDetail }) {
               <Info className="w-4 h-4" /> {t.jobDetails.description}
             </h3>
             <p className="text-gray-600 leading-relaxed break-words">
-              {job.description}
+              {job.description || "Aucune description fournie."}
             </p>
           </div>
 
@@ -138,8 +177,11 @@ export default function JobDetails({ job }: { job: JobDetail }) {
               </AccordionTrigger>
               <AccordionContent>
                 <ul className="list-disc ml-4 space-y-1 text-gray-600">
-                  {job.responsibilities.map((r, idx) => (
-                    <li key={idx} className="break-words">{r}</li>
+                  {(job.responsibilities || []).map((r, idx) => (
+                    <li key={idx} className="flex items-start gap-2 break-words">
+                      <span className="w-1.5 h-1.5 bg-[#1e3a8a] rounded-full mt-2 flex-shrink-0"></span>
+                      <span>{r}</span>
+                    </li>
                   ))}
                 </ul>
               </AccordionContent>
@@ -151,8 +193,11 @@ export default function JobDetails({ job }: { job: JobDetail }) {
               </AccordionTrigger>
               <AccordionContent>
                 <ul className="list-disc ml-4 space-y-1 text-gray-600">
-                  {job.qualifications.map((q, idx) => (
-                    <li key={idx} className="break-words">{q}</li>
+                  {(job.qualifications || []).map((q, idx) => (
+                    <li key={idx} className="flex items-start gap-2 break-words">
+                      <span className="w-1.5 h-1.5 bg-[#1e3a8a] rounded-full mt-2 flex-shrink-0"></span>
+                      <span>{q}</span>
+                    </li>
                   ))}
                 </ul>
               </AccordionContent>
@@ -163,11 +208,17 @@ export default function JobDetails({ job }: { job: JobDetail }) {
                 {t.jobDetails.benefits}
               </AccordionTrigger>
               <AccordionContent>
-                <ul className="list-disc ml-4 space-y-1 text-gray-600">
-                  {job.benefits.map((b, idx) => (
-                    <li key={idx} className="break-words">{b}</li>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {(job.benefits || []).map((b, idx) => (
+                    <div 
+                      key={idx} 
+                      className="flex items-center gap-2 p-2 bg-green-50 rounded-lg border border-green-100 text-green-800"
+                    >
+                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                      <span className="break-words">{b}</span>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
@@ -176,9 +227,11 @@ export default function JobDetails({ job }: { job: JobDetail }) {
 
           <div className="bg-gradient-to-br from-gray-50 to-blue-50/30 p-3 sm:p-4 rounded-xl">
             <h3 className="mb-3 text-[#1e3a8a] flex items-center gap-2">
-              <Users className="w-4 h-4" /> {t.jobDetails.about} {job.company}
+              <Users className="w-4 h-4" /> {t.jobDetails.about} {displayCompany}
             </h3>
-            <p className="text-gray-600 mb-3 break-words">{job.about}</p>
+            <p className="text-gray-600 mb-3 break-words">
+              {job.about || "Aucune information disponible sur l'entreprise."}
+            </p>
             <div className="grid grid-cols-2 gap-2 text-gray-600 text-xs sm:text-sm">
               <p><span className="font-medium">{t.jobDetails.sector}</span> {job.sector}</p>
               <p><span className="font-medium">{t.jobDetails.companySize}</span> {job.companySize}</p>
@@ -188,35 +241,4 @@ export default function JobDetails({ job }: { job: JobDetail }) {
       </div>
     </Card>
   );
-}
-
-// Composant helper local
-function MatchingScoreContainer({ offerId }: { offerId: string }) {
-  const { result, loading, error } = useMatchingScore(offerId);
-
-  if (loading) {
-    return (
-      <Card className="p-4">
-        <CardContent className="flex items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card className="p-4 border-destructive/20">
-        <CardContent>
-          <p className="text-sm text-destructive">Impossible de calculer le matching.</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!result) {
-    return null;
-  }
-
-  return <MatchingScore matchResult={result} compact={true} />;
 }

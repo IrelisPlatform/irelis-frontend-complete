@@ -34,18 +34,33 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useLanguage } from "@/context/LanguageContext";
 import usePublishedJobs from '@/hooks/usePublishedJobs';
+import { toast } from "sonner";
 
 export default function Page() {
   const { t } = useLanguage(); // ← Accès aux traductions
 
   const [selectedJobId, setSelectedJobId] = useState<string | undefined>(undefined);
   const [currentPage, setCurrentPage] = useState(1);
-  const { jobs: allJobs, totalPages, loading: jobsLoading, error: jobsError } = usePublishedJobs(currentPage - 1, 5);
+  const { jobs: allJobs, totalPages, totalElements, loading: jobsLoading, error: jobsError } = usePublishedJobs(currentPage - 1, 5);
+
+  // 🔍 Débogage : afficher les dates reçues du backend
+  useEffect(() => {
+    if (!jobsLoading && allJobs.length > 0) {
+      console.log("✅ Offres reçues du backend (dates) :", 
+        allJobs.map(job => ({
+          id: job.id,
+          title: job.title,
+          publishedAt: job.publishedAt,
+          expirationDate: job.expirationDate,
+        }))
+      );
+    }
+  }, [allJobs, jobsLoading]);
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const isMobile = useMediaQuery({ maxWidth: 1023 });
 
-  const { jobDetail: selectedJob, loading: detailLoading, error: detailError } = useJobDetails(selectedJobId);
+  const selectedJob = allJobs.find(job => job.id === selectedJobId);
 
   useEffect(() => {
     if (allJobs && allJobs.length > 0 && !selectedJobId) {
@@ -54,7 +69,24 @@ export default function Page() {
   }, [allJobs, selectedJobId]);
 
 
-  const [showGroups, setShowGroups] = useState(true);
+  const [showGroups, setShowGroups] = useState(false);
+
+  const getRandomWhatsAppLink = () => {
+    const links = [
+      "https://chat.whatsapp.com/DM7BvYe8pnbFfo9sohX1En?mode=wwt",
+      "https://chat.whatsapp.com/FqcS0nhbgObGXVqs9O5oVg?mode=wwt",
+      "https://chat.whatsapp.com/KAJQnGcmcOaERfE72oldrm?mode=wwt"
+    ].map(link => link.trim());
+    const randomIndex = Math.floor(Math.random() * links.length);
+    return links[randomIndex];
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowGroups(true);
+    }, 3000); // 3 secondes
+    return () => clearTimeout(timer);
+  }, []);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -75,7 +107,7 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-[#f8f9fb]">
       <Header />
-      <JobSearchBar jobCount={allJobs.length} />
+      <JobSearchBar jobCount={totalElements} />
       <DropdownFilters />
 
       {/* ✅ BOUTON "Réinitialiser les filtres" */}
@@ -89,57 +121,24 @@ export default function Page() {
       {/* ✅ BLOC "Rejoignez nos groupes" - visible par défaut */}
       {showGroups && (
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 mt-8">
-          <div className="bg-[#1e3a8a] text-white p-6 rounded-xl">
+          <div className="bg-[#1e3a8a] text-white p-4 rounded-xl">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
-                <h3 className="text-xl font-bold">{t.page.joinGroups.title}</h3>
-                <p className="text-sm mt-1">{t.page.joinGroups.subtitle}</p>
+                <h3 className="text-lg font-bold">{t.page.joinGroups.title}</h3>
+                <p className="text-xs mt-1">{t.page.joinGroups.subtitle}</p>
               </div>
               <div className="flex gap-3">
-                {/* WhatsApp */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="bg-green-400 hover:bg-green-500 text-white border-none"
-                    >
-                      <MessageCircle className="w-5 h-5 mr-2" />
-                      WhatsApp
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
-                      <a
-                        href="https://chat.whatsapp.com/DM7BvYe8pnbFfo9sohX1En?mode=wwt"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block"
-                      >
-                        {t.page.joinGroups.candidates}
-                      </a>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <a
-                        href="https://chat.whatsapp.com/FqcS0nhbgObGXVqs9O5oVg?mode=wwt"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block"
-                      >
-                        {t.page.joinGroups.recruiters}
-                      </a>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <a
-                        href="https://chat.whatsapp.com/KAJQnGcmcOaERfE72oldrm?mode=wwt"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block"
-                      >
-                        {t.page.joinGroups.support}
-                      </a>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Button
+                  variant="outline"
+                  className="bg-green-400 hover:bg-green-500 text-white border-none"
+                  onClick={() => {
+                    const link = getRandomWhatsAppLink();
+                    window.open(link, '_blank', 'noopener,noreferrer');
+                  }}
+                >
+                  <MessageCircle className="w-5 h-5 mr-2" />
+                  WhatsApp
+                </Button>
 
                 {/* Telegram */}
                 <Button

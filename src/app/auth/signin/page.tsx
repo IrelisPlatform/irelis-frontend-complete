@@ -30,7 +30,13 @@ export default function SigninPage() {
   }, []);
 
   const handleGoogle = () => {
-    window.location.href = `${backendUrl}/oauth2/authorization/google?state=google&returnTo=${encodeURIComponent(returnTo)}`;
+    const returnTo = 
+      process.env.NODE_ENV === 'development'
+        ? "/"
+        : params.get("returnTo") || "/";
+  
+    const redirectUri = `${window.location.origin}/auth/oauth2/callback`;
+    window.location.href = `${backendUrl}/oauth2/authorization/google?state=google&returnTo=${encodeURIComponent(returnTo)}&redirect_uri=${encodeURIComponent(redirectUri)}`;
   };
 
   const handleLinkedin = () => {

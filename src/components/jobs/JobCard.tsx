@@ -1,24 +1,17 @@
+// /src/components/jobs/JobCard.tsx
+
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Bookmark, MapPin, Briefcase, DollarSign, Clock, Zap, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { formatRelativeExpirationDate } from "@/utils/date";
+
+import { PublishedJob } from "@/types/job";
 
 interface JobCardProps {
-  job: {
-    id: string;
-    title: string;
-    description: string;
-    workCityLocation: string;
-    workCountryLocation: string;
-    contractType: string;
-    salary: string;
-    publishedAt: string;
-    isUrgent: boolean;
-    isFeatured: boolean;
-    tagDto: Array<{ name: string; type: string }>;
-  };
+  job: PublishedJob;
   onClick: () => void;
   isSelected?: boolean;
 }
@@ -26,12 +19,11 @@ interface JobCardProps {
 export function JobCard({ job, onClick, isSelected }: JobCardProps) {
   const [isBookmarked, setIsBookmarked] = useState(false);
 
-  const location = `${job.workCityLocation}, ${job.workCountryLocation}`;
-  const contractType = job.contractType;
-  const posted = new Date(job.publishedAt).toLocaleDateString('fr-FR');
-  const tags = job.tagDto.map(t => t.name);
-
-  const company = "Entreprise confidentielle";
+  const location = job.location || "Localisation non précisée";
+  const contractType = job.type || "Type non précisé";
+  const tags = job.tags || [];
+  const company = job.company || "Entreprise confidentielle";
+  const companyInitials = company.substring(0, 2).toUpperCase();
 
   const handleBookmark = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -93,7 +85,7 @@ export function JobCard({ job, onClick, isSelected }: JobCardProps) {
           whileHover={{ scale: 1.05, rotate: 2 }}
           transition={{ type: "spring", stiffness: 300 }}
         >
-          <span className="select-none">{company.substring(0, 2).toUpperCase()}</span>
+          <span className="select-none">{companyInitials}</span>
         </motion.div>
         
         <div className="flex-1">
@@ -138,7 +130,9 @@ export function JobCard({ job, onClick, isSelected }: JobCardProps) {
               transition={{ duration: 0.2 }}
             >
               <Clock className="w-4 h-4 text-[#1e3a8a]/70 flex-shrink-0" />
-              {posted}
+              {job.expirationDate
+                ? formatRelativeExpirationDate(job.expirationDate)
+                : 'Date d’expiration non précisée'}
             </motion.span>
           </div>
           

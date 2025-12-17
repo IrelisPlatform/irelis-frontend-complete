@@ -1,53 +1,31 @@
 // src/app/admin/login/page.tsx
 "use client";
 
-// src/app/admin/login/page.tsx
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AuthHeader } from "@/components/auth/AuthHeader";
 import { AuthFooter } from "@/components/auth/AuthFooter";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { toast } from "sonner";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const { login, loading } = useAdminAuth(); // ← hook centralisé
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL?.trim() || 'http://api-irelis.us-east-2.elasticbeanstalk.com';
-      const res = await fetch(`${backendUrl}/admin/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      let data = {};
-      try {
-        data = await res.json();
-      } catch (e) {
-        // ignore
-      }
-
-      if (res.ok && data.accessToken) {
-        localStorage.setItem("adminToken", data.accessToken);
-        localStorage.setItem("adminEmail", email);
-        router.push("/admin");
-      } else {
-        const message = data?.message || "Identifiants invalides";
-        toast.error(message);
-      }
+      await login({ email, password });
+      // Après login réussi, on est redirigé via le hook ou ici
+      router.push("/admin");
     } catch (err) {
-      toast.error("Erreur de connexion");
-    } finally {
-      setLoading(false);
+      // Erreur déjà gérée par le hook (toast)
     }
   };
 
@@ -56,26 +34,56 @@ export default function AdminLoginPage() {
       <AuthHeader />
       <main className="flex justify-center flex-1">
         <div className="bg-white p-8 rounded-xl shadow-sm w-full max-w-md border">
-          <h1 className="text-2xl font-bold text-[#1e3a8a] mb-6">Administration Irelis</h1>
+          <h1 className="text-2xl font-bold text-[#1e3a8a] mb-6">
+            Administration Irelis
+          </h1>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="text-sm mb-1 block">Email</label>
+              <label htmlFor="email" className="text-sm mb-1 block">
+                Email
+              </label>
               <Input
+                id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
-            <div>
-              <label className="text-sm mb-1 block">Mot de passe</label>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+
+            {/* Mot de passe */}
+            <div className="relative">
+              <label htmlFor="password" className="text-sm mb-1 block">
+                Mot de passe
+              </label>
+              <div className="relative mt-1">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
+                  aria-label={
+                    showPassword 
+                      ? "Masquer le mot de passe" 
+                      : "Afficher le mot de passe"
+                  }
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
             </div>
+
             <Button
               type="submit"
               className="w-full bg-[#1e3a8a] hover:bg-[#1e40af] text-white"

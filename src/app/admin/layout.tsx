@@ -20,7 +20,7 @@ export default function AdminLayout({
       return;
     }
 
-    const adminToken = localStorage.getItem("adminToken");
+    const adminToken = localStorage.getItem("accessToken");
     if (!adminToken) {
       router.push("/admin/login");
     }

@@ -96,13 +96,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    * Point d'entrée pour les API métier : garantit un token valide ou null.
    * Cette fonction est la seule autorisée à accéder à localStorage["accessToken"].
    */
+  /**
+   * Renvoie un accessToken valide ou null.
+   * - Si absent → null
+   * - Si présent et non expiré → retourne le token
+   * - Si présent mais expiré → tente un refresh
+   */
   const getValidToken = async (): Promise<string | null> => {
+    if (typeof window === "undefined") return null;
+
     const currentToken = localStorage.getItem("accessToken");
     if (!currentToken) return null;
 
-    // 🔜 Futur optim : décode le JWT pour vérifier l'expiration avant de faire un appel inutile
-    // Pour l'instant, on laisse l'API gérer les 401 → plus simple
-    return currentToken;
+    // 🔍 Décoder le payload du JWT (partie du milieu)
+    try {
+      const payloadBase64 = currentToken.split('.')[1];
+      if (!payloadBase64) return null;
+
+      // Remettre le padding manquant (base64url → base64)
+      const padded = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+      const payloadJson = atob(padded);
+      const payload = JSON.parse(payloadJson);
+
+      // Vérifier l'expiration (exp en secondes)
+      const now = Math.floor(Date.now() / 1000);
+      if (payload.exp && payload.exp > now) {
+        // Token encore valide
+        return currentToken;
+      }
+    } catch (e) {
+      console.warn("Impossible de décoder le JWT → token traité comme invalide", e);
+    }
+
+    // Token expiré ou invalide → tente de rafraîchir
+    const newToken = await refreshAccessToken();
+    return newToken;
   };
 
   const deleteAccount = async () => {
@@ -139,6 +167,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    */
   useEffect(() => {
     const validateSession = async () => {
+      if (typeof window !== "undefined") {
+        if (window.location.pathname.startsWith("/admin")) {
+          setLoading(false);
+          return;
+        }
+      }
       if (typeof window === "undefined") {
         setLoading(false);
         return;

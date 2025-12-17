@@ -12,16 +12,16 @@ export default function AdminUserMenu() {
   const router = useRouter();
 
   useEffect(() => {
-    // ✅ Accès à localStorage uniquement côté client
-    const storedEmail = localStorage.getItem("adminEmail");
-    if (storedEmail) {
-      setEmail(storedEmail);
+    if (typeof window !== "undefined") {
+      const storedEmail = localStorage.getItem("adminEmail");
+      if (storedEmail) {
+        setEmail(storedEmail);
+      }
     }
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("adminToken");
-    localStorage.removeItem("adminEmail");
+    localStorage.removeItem("accessToken");
     router.push("/admin/login");
   };
 

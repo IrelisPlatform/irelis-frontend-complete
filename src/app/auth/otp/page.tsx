@@ -99,10 +99,9 @@ export default function OtpPage() {
       const data = await res.json();
 
       if (res.ok && data.accessToken && data.refreshToken) {
-        if (typeof window !== "undefined") {
-          localStorage.setItem("accessToken", data.accessToken);
-          localStorage.setItem("refreshToken", data.refreshToken);
-        }
+
+        localStorage.setItem("accessToken", data.accessToken);
+
         // Nouveau : utiliser la redirection préférée si elle existe
         const preferredRedirect = localStorage.getItem("auth_preferred_redirect");
         const finalRedirect = preferredRedirect || returnTo;
